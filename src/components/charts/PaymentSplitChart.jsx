@@ -1,28 +1,20 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import {
+    PieChart, Pie, Cell, Tooltip, ResponsiveContainer
+} from "recharts";
 
-const COLORS = ["#16a34a", "#2563eb", "#dc2626"];
+const COLORS = ["#3b82f6", "#22c55e", "#f59e0b"];
 
 export default function PaymentSplitChart({ data }) {
     return (
-        <div style={{ width: "100%", height: 300 }}>
-            <h4>Payment Split</h4>
-
-            <ResponsiveContainer>
-                <PieChart>
-                    <Pie
-                        data={data}
-                        dataKey="value"
-                        nameKey="name"
-                        outerRadius={100}
-                        label
-                    >
-                        {data.map((_, index) => (
-                            <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Pie>
-                    <Tooltip />
-                </PieChart>
-            </ResponsiveContainer>
-        </div>
+        <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+                <Pie data={data} dataKey="value" nameKey="name" outerRadius={100}>
+                    {data.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                </Pie>
+                <Tooltip />
+            </PieChart>
+        </ResponsiveContainer>
     );
 }

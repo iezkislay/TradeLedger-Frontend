@@ -14,34 +14,85 @@ export default function LoginPage() {
     const submit = async () => {
         try {
             await login(form.username, form.password);
-            navigate("/dashboard");
+            navigate("/home");
         } catch {
             alert("Invalid username or password");
         }
     };
 
     return (
-        <div>
-            <h2>Login</h2>
+        <div style={page}>
+            <div style={card}>
+                <h2 style={title}>🔐 Login</h2>
 
-            <input
-                placeholder="Username"
-                value={form.username}
-                onChange={e => setForm({ ...form, username: e.target.value })}
-            />
+                <input
+                    style={input}
+                    placeholder="Username"
+                    value={form.username}
+                    onChange={e =>
+                        setForm({ ...form, username: e.target.value })
+                    }
+                />
 
-            <br /><br />
+                <input
+                    style={input}
+                    type="password"
+                    placeholder="Password"
+                    value={form.password}
+                    onChange={e =>
+                        setForm({ ...form, password: e.target.value })
+                    }
+                />
 
-            <input
-                type="password"
-                placeholder="Password"
-                value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
-            />
-
-            <br /><br />
-
-            <button onClick={submit}>Login</button>
+                <button style={button} onClick={submit}>
+                    Login
+                </button>
+            </div>
         </div>
     );
 }
+
+/* ================= STYLES ================= */
+
+const page = {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f6f7fb"
+};
+
+const card = {
+    width: 360,
+    padding: 24,
+    borderRadius: 10,
+    background: "#fff",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
+};
+
+const title = {
+    marginBottom: 20,
+    textAlign: "center"
+};
+
+const input = {
+    width: "100%",
+    padding: "10px 12px",
+    marginBottom: 14,
+    borderRadius: 6,
+    border: "1px solid #ddd",
+    fontSize: 14,
+    outline: "none"
+};
+
+const button = {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 6,
+    border: "none",
+    background: "#2563eb",
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: 600,
+    cursor: "pointer"
+};
