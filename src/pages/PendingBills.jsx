@@ -44,7 +44,16 @@ export default function PendingBills() {
                     <div key={b.billId} style={card}>
                         {/* LEFT */}
                         <div style={left}>
-                            <div style={billCode}>
+                            <div
+                                style={{
+                                    ...billCode,
+                                    cursor: "pointer",
+                                    color: "#2563eb"
+                                }}
+                                onClick={() =>
+                                    (window.location.href = `/bills/${b.billId}/view`)
+                                }
+                            >
                                 {b.billCode}
                             </div>
                             <div style={date}>

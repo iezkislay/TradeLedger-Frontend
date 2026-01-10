@@ -4,14 +4,14 @@ import axios from "../api/axios";
 import { searchCustomers } from "../api/customerApi";
 
 /* =====================================================
-   BILLING PAGE — ERP GRADE (VISUAL POLISH ONLY)
+   BILLING PAGE — ERP GRADE (ENHANCED, SAFE)
    ===================================================== */
 
 export default function Billing() {
     const { user } = useAuth();
 
     /* ======================
-       1️⃣ USER INPUT STATE
+       STATE
        ====================== */
     const [billingInput, setBillingInput] = useState({
         customer: {
@@ -23,9 +23,11 @@ export default function Billing() {
         },
         paymentType: "CASH",
         items: [],
-        discountAmount: 0,
-        amountPaid: 0
+        discountAmount: "",
+        amountPaid: ""
     });
+
+    const [errors, setErrors] = useState({});
 
     /* ======================
        ITEM SEARCH
@@ -61,6 +63,38 @@ export default function Billing() {
     }, [customerQuery]);
 
     /* ======================
+       CUSTOMER BALANCES (LEDGER-DRIVEN)
+       ====================== */
+    const [customerBalances, setCustomerBalances] = useState({});
+
+    useEffect(() => {
+        const fetchBalances = async () => {
+            const balances = { ...customerBalances };
+
+            await Promise.all(
+                customerResults.map(async (c) => {
+                    if (balances[c.id] === undefined) {
+                        try {
+                            const res = await axios.get(
+                                `/customers/${c.id}/balance`
+                            );
+                            balances[c.id] = Number(res.data?.data || 0);
+                        } catch {
+                            balances[c.id] = 0;
+                        }
+                    }
+                })
+            );
+
+            setCustomerBalances(balances);
+        };
+
+        if (customerResults.length > 0) {
+            fetchBalances();
+        }
+    }, [customerResults]);
+
+    /* ======================
        DERIVED TOTALS
        ====================== */
     const derivedTotals = useMemo(() => {
@@ -69,37 +103,52 @@ export default function Billing() {
             0
         );
 
-        const finalAmount = Math.max(
-            subtotal - billingInput.discountAmount,
-            0
-        );
+        const discount = Number(billingInput.discountAmount) || 0;
+        const finalAmount = Math.max(subtotal - discount, 0);
 
-        const dueAmount = Math.max(
-            finalAmount - billingInput.amountPaid,
-            0
-        );
+        const paid =
+            billingInput.paymentType === "CREDIT"
+                ? Number(billingInput.amountPaid) || 0
+                : finalAmount;
 
-        return { subtotal, finalAmount, dueAmount };
+        const dueAmount =
+            billingInput.paymentType === "CREDIT"
+                ? Math.max(finalAmount - paid, 0)
+                : 0;
+
+        return { subtotal, finalAmount, paid, dueAmount };
     }, [billingInput]);
 
     /* ======================
        ITEM ACTIONS
        ====================== */
     const addItem = (item) => {
-        setBillingInput(prev => ({
-            ...prev,
-            items: [
-                ...prev.items,
-                {
-                    itemId: item.id,
-                    name: item.name,
-                    baseUnit: item.baseUnit,
-                    availableStock: item.availableStock,
-                    quantity: 1,
-                    price: item.sellingPrice || 0
-                }
-            ]
-        }));
+        setBillingInput(prev => {
+            const idx = prev.items.findIndex(
+                i => i.itemId === item.id
+            );
+
+            if (idx !== -1) {
+                const items = [...prev.items];
+                items[idx].quantity = Number(items[idx].quantity) + 1;
+                return { ...prev, items };
+            }
+
+            return {
+                ...prev,
+                items: [
+                    ...prev.items,
+                    {
+                        itemId: item.id,
+                        name: item.name,
+                        baseUnit: item.baseUnit,
+                        availableStock: item.availableStock,
+                        quantity: 1,
+                        price: item.sellingPrice || 0
+                    }
+                ]
+            };
+        });
 
         setSearchTerm("");
         setSearchResults([]);
@@ -119,9 +168,39 @@ export default function Billing() {
     };
 
     /* ======================
+       VALIDATION
+       ====================== */
+    const validate = () => {
+        const e = {};
+
+        if (billingInput.items.length === 0) {
+            e.items = "At least one item is required";
+        }
+
+        if (billingInput.paymentType === "CREDIT") {
+            if (
+                billingInput.customer.mode === "WALK_IN" &&
+                !billingInput.customer.customerId
+            ) {
+                if (!billingInput.customer.name.trim()) {
+                    e.name = "Customer name is required for credit bill";
+                }
+                if (!billingInput.customer.mobile.trim()) {
+                    e.mobile = "Mobile number is required for credit bill";
+                }
+            }
+        }
+
+        setErrors(e);
+        return Object.keys(e).length === 0;
+    };
+
+    /* ======================
        SUBMIT BILL
        ====================== */
     const submitBill = async () => {
+        if (!validate()) return;
+
         const payload = {
             paymentType: billingInput.paymentType,
 
@@ -145,8 +224,11 @@ export default function Billing() {
                     ? billingInput.customer.address
                     : null,
 
-            discountAmount: billingInput.discountAmount || 0,
-            amountPaid: billingInput.amountPaid || 0,
+            discountAmount: Number(billingInput.discountAmount) || 0,
+            amountPaid:
+                billingInput.paymentType === "CREDIT"
+                    ? Number(billingInput.amountPaid) || 0
+                    : derivedTotals.finalAmount,
 
             items: billingInput.items.map(i => ({
                 itemId: i.itemId,
@@ -155,8 +237,18 @@ export default function Billing() {
             }))
         };
 
-        await axios.post("/bills", payload);
-        alert("Bill created successfully");
+        const res = await axios.post("/bills", payload);
+
+        const billId = res.data?.data?.id;
+        const shouldPrint = window.confirm(
+            "Bill created successfully.\nDo you want to print the bill?"
+        );
+
+        if (shouldPrint && billId) {
+            window.location.href = `/billing/print/${billId}`;
+            return;
+        }
+
         resetForm();
     };
 
@@ -171,11 +263,12 @@ export default function Billing() {
             },
             paymentType: "CASH",
             items: [],
-            discountAmount: 0,
-            amountPaid: 0
+            discountAmount: "",
+            amountPaid: ""
         });
         setCustomerQuery("");
         setCustomerResults([]);
+        setErrors({});
     };
 
     /* ======================
@@ -195,7 +288,8 @@ export default function Billing() {
                     onChange={e =>
                         setBillingInput({
                             ...billingInput,
-                            paymentType: e.target.value
+                            paymentType: e.target.value,
+                            amountPaid: ""
                         })
                     }
                 >
@@ -206,7 +300,7 @@ export default function Billing() {
 
                 <input
                     style={input}
-                    placeholder="Search customer (name / mobile / code)"
+                    placeholder="Search customer"
                     value={customerQuery}
                     onChange={e => setCustomerQuery(e.target.value)}
                 />
@@ -228,9 +322,13 @@ export default function Billing() {
                             });
                             setCustomerQuery("");
                             setCustomerResults([]);
+                            setErrors({});
                         }}
                     >
-                        {c.customerCode} — {c.name} ({c.mobile}) — Due ₹{c.balance}
+                        {c.customerCode} — {c.name} ({c.mobile})
+                        {customerBalances[c.id] > 0 && (
+                            <span> — Due ₹{customerBalances[c.id]}</span>
+                        )}
                     </div>
                 ))}
 
@@ -249,6 +347,7 @@ export default function Billing() {
                         })
                     }
                 />
+                {errors.name && <div style={error}>{errors.name}</div>}
 
                 <input
                     style={input}
@@ -265,6 +364,7 @@ export default function Billing() {
                         })
                     }
                 />
+                {errors.mobile && <div style={error}>{errors.mobile}</div>}
 
                 <input
                     style={input}
@@ -283,7 +383,7 @@ export default function Billing() {
                 />
             </section>
 
-            {/* ITEM SEARCH */}
+            {/* ADD ITEM */}
             <section style={box}>
                 <h3>📦 Add Item</h3>
 
@@ -318,7 +418,11 @@ export default function Billing() {
                             type="number"
                             value={item.quantity}
                             onChange={e =>
-                                updateItem(idx, "quantity", Number(e.target.value) || 0)
+                                updateItem(
+                                    idx,
+                                    "quantity",
+                                    Number(e.target.value) || 0
+                                )
                             }
                         />
 
@@ -327,7 +431,11 @@ export default function Billing() {
                             type="number"
                             value={item.price}
                             onChange={e =>
-                                updateItem(idx, "price", Number(e.target.value) || 0)
+                                updateItem(
+                                    idx,
+                                    "price",
+                                    Number(e.target.value) || 0
+                                )
                             }
                         />
 
@@ -339,10 +447,12 @@ export default function Billing() {
                     </div>
                 ))}
             </section>
+            {errors.items && <div style={error}>{errors.items}</div>}
 
             {/* SUMMARY */}
             <section style={box}>
                 <h3>💰 Summary</h3>
+
                 <div>Subtotal: ₹ {derivedTotals.subtotal}</div>
 
                 <div>
@@ -350,11 +460,12 @@ export default function Billing() {
                     <input
                         style={smallInput}
                         type="number"
+                        placeholder="0"
                         value={billingInput.discountAmount}
                         onChange={e =>
                             setBillingInput({
                                 ...billingInput,
-                                discountAmount: Number(e.target.value) || 0
+                                discountAmount: e.target.value
                             })
                         }
                     />
@@ -364,24 +475,26 @@ export default function Billing() {
             </section>
 
             {/* PAYMENT */}
-            <section style={box}>
-                <h3>💳 Payment</h3>
+            {billingInput.paymentType === "CREDIT" && (
+                <section style={box}>
+                    <h3>💳 Payment</h3>
 
-                <input
-                    style={input}
-                    type="number"
-                    placeholder="Amount Paid"
-                    value={billingInput.amountPaid}
-                    onChange={e =>
-                        setBillingInput({
-                            ...billingInput,
-                            amountPaid: Number(e.target.value) || 0
-                        })
-                    }
-                />
+                    <input
+                        style={input}
+                        type="number"
+                        placeholder="Amount Paid"
+                        value={billingInput.amountPaid}
+                        onChange={e =>
+                            setBillingInput({
+                                ...billingInput,
+                                amountPaid: e.target.value
+                            })
+                        }
+                    />
 
-                <div>Due: ₹ {derivedTotals.dueAmount}</div>
-            </section>
+                    <div>Due: ₹ {derivedTotals.dueAmount}</div>
+                </section>
+            )}
 
             {/* ACTIONS */}
             <section style={{ display: "flex", gap: 12 }}>
@@ -397,6 +510,12 @@ export default function Billing() {
 }
 
 /* ================= STYLES ================= */
+
+const error = {
+    color: "crimson",
+    fontSize: 13,
+    marginBottom: 6
+};
 
 const page = {
     padding: 24,
@@ -424,10 +543,11 @@ const input = {
 };
 
 const smallInput = {
-    width: 70,
+    width: 80,
     padding: "6px 8px",
     borderRadius: 6,
-    border: "1px solid #ddd"
+    border: "1px solid #ddd",
+    marginLeft: 6
 };
 
 const searchRow = {

@@ -12,9 +12,9 @@ import PendingBills from "./pages/PendingBills.jsx";
 import BillSettlement from "./pages/BillSettlement.jsx";
 import Items from "./pages/Items";
 import ItemForm from "./pages/ItemForm";
-import StockView from "./pages/StockView.jsx";
-
-/* 🆕 RETURNS & REFUNDS */
+import BillView from "./pages/BillView.jsx"
+import CustomerBills from "./pages/CustomerBills.jsx";
+import StockAdjust from "./pages/StockAdjust";
 import BillReturns from "./pages/BillReturns.jsx";
 import PartialReturn from "./pages/PartialReturn.jsx";
 import Refund from "./pages/Refund.jsx";
@@ -110,6 +110,24 @@ function App() {
                     }
                 />
 
+                <Route
+                    path="/bills/:billId/view"
+                    element={
+                        <PrivateRoute>
+                            <BillView />
+                        </PrivateRoute>
+                    }
+                />
+
+                <Route
+                    path="/customers/:customerId/bills"
+                    element={
+                        <PrivateRoute>
+                            <CustomerBills />
+                        </PrivateRoute>
+                    }
+                />
+
                 {/* ================= ITEM MASTER ================= */}
 
                 <Route
@@ -139,13 +157,11 @@ function App() {
                     }
                 />
 
-                {/* ================= STOCK ================= */}
-
                 <Route
-                    path="/stock/summary"
+                    path="/stock/:itemId/adjust"
                     element={
-                        <PrivateRoute>
-                            <StockView />
+                        <PrivateRoute roles={["OWNER"]}>
+                            <StockAdjust />
                         </PrivateRoute>
                     }
                 />

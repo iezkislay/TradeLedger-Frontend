@@ -4,7 +4,8 @@ import { getCustomerBalance } from "../api/customerApi";
 export default function CustomerCard({
                                          customer,
                                          onStatement,
-                                         onPending
+                                         onPending,
+                                         onAllBills
                                      }) {
     const [balance, setBalance] = useState(null);
 
@@ -43,7 +44,7 @@ export default function CustomerCard({
                     <div>📞 {customer.mobile}</div>
                 )}
 
-                {/* ✅ ADDRESS — CONDITIONAL (FIXED) */}
+                {/* ADDRESS — CONDITIONAL (UNCHANGED) */}
                 {customer.address && (
                     <div style={address}>
                         📍 {customer.address}
@@ -68,6 +69,16 @@ export default function CustomerCard({
                 >
                     Statement
                 </button>
+
+                {/* 🆕 ALL BILLS — ADDITIVE ONLY */}
+                {onAllBills && (
+                    <button
+                        onClick={() => onAllBills(customer.id)}
+                        style={secondaryBtn}
+                    >
+                        All Bills
+                    </button>
+                )}
 
                 {isDue && (
                     <button
