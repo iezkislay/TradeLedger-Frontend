@@ -21,6 +21,13 @@ export default function Home() {
                     link="/billing"
                 />
 
+                {/* GST BILLING */}
+                <Card
+                    title="🧾 GST Billing"
+                    desc="Create GST invoices with tax breakdown and compliance"
+                    link="/gst/billing"
+                />
+
                 {/* CUSTOMERS */}
                 <Card
                     title="👥 Customers"

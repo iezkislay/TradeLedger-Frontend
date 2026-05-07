@@ -2,26 +2,20 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "../api/axios";
 
-/* ===============================
-   TRADELEDGER PRINT TEMPLATE
-   FINAL PROFESSIONAL VERSION
-   =============================== */
-
-export default function BillPrint() {
-    const { billId } = useParams();
-    const [bill, setBill] = useState(null);
+export default function ReturnPrint() {
+    const { returnNoteId } = useParams();
+    const [data, setData] = useState(null);
     const [templateSize, setTemplateSize] = useState("A5");
 
     useEffect(() => {
-        axios.get(`/bills/${billId}/print`)
-            .then(res => setBill(res.data));
-    }, [billId]);
+        axios
+            .get(`/returns/${returnNoteId}/print`)
+            .then(res => setData(res.data));
+    }, [returnNoteId]);
 
-    if (!bill) return <p>Loading...</p>;
+    if (!data) return <p>Loading...</p>;
 
-    /* ===============================
-       DATE FORMAT → 18 Feb 2026
-       =============================== */
+    /* ================= DATE ================= */
     const formatDate = (dateStr) => {
         const d = new Date(dateStr);
         if (isNaN(d)) return "-";
@@ -32,42 +26,12 @@ export default function BillPrint() {
         });
     };
 
-    /* ===============================
-       CURRENCY FORMAT
-       =============================== */
+    /* ================= CURRENCY ================= */
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat("en-IN", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }).format(amount || 0);
-    };
-
-    /* ===============================
-       NUMBER TO WORDS (INDIAN)
-       =============================== */
-    const numberToWords = (num) => {
-        if (!num) return "Zero Rupees Only";
-
-        const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
-        const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
-            "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
-        const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-
-        const convert = (n) => {
-            if (n < 10) return ones[n];
-            if (n < 20) return teens[n - 10];
-            if (n < 100)
-                return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
-            if (n < 1000)
-                return ones[Math.floor(n / 100)] + " Hundred " + (n % 100 ? convert(n % 100) : "");
-            if (n < 100000)
-                return convert(Math.floor(n / 1000)) + " Thousand " + (n % 1000 ? convert(n % 1000) : "");
-            if (n < 10000000)
-                return convert(Math.floor(n / 100000)) + " Lakh " + (n % 100000 ? convert(n % 100000) : "");
-            return convert(Math.floor(n / 10000000)) + " Crore " + (n % 10000000 ? convert(n % 10000000) : "");
-        };
-
-        return convert(Math.floor(num)) + " Rupees Only";
     };
 
     const sizeStyles = {
@@ -76,24 +40,10 @@ export default function BillPrint() {
         A6: { width: "105mm", minHeight: "148mm" }
     };
 
-    const watermarkText = (() => {
-        switch (bill.state) {
-            case "ESTIMATE":
-                return "*** ESTIMATE ***";
-            case "ACTIVE":
-                return "*** RETAIL INVOICE ***";
-            case "CLOSED":
-                return "*** RETAIL INVOICE ***";
-            case "CANCELLED":
-                return "*** CANCELLED ***";
-            default:
-                return "";
-        }
-    })();
+    const watermarkText = "*** RETURN NOTE ***";
 
     return (
         <div style={{ textAlign: "center" }}>
-
             <style>
                 {`
                 @media print {
@@ -102,6 +52,7 @@ export default function BillPrint() {
                 `}
             </style>
 
+            {/* SIZE SELECTOR */}
             <div className="no-print" style={{ marginBottom: 20 }}>
                 <label>Select Size: </label>
                 <select
@@ -115,47 +66,57 @@ export default function BillPrint() {
             </div>
 
             <div style={{ ...page, ...sizeStyles[templateSize], position: "relative" }}>
-
-                {/* WATERMARK */}
                 <div style={watermark}>
                     {watermarkText}
                 </div>
 
+                {/* HEADER */}
                 <h2 style={{ marginBottom: 4 }}>Pooja Hardware</h2>
                 <div>C K Road, Arrah</div>
                 <div>Mobile: 9304646404</div>
 
                 <div style={{ marginTop: 10 }}>
-                    Bill No: {bill.billNumber}
+                    <b>Return No:</b> {data.returnNumber}
                 </div>
-                <div>Date: {formatDate(bill.billDate)}</div>
+                <div><b>Date:</b> {formatDate(data.returnDate)}</div>
 
                 <hr style={lightHr} />
 
-                <div><b>Customer:</b> {bill.customerName || "Walk-in"}</div>
-                <div><b>Mobile:</b> {bill.customerMobile || "-"}</div>
-                <div><b>Address:</b> {bill.customerAddress || "-"}</div>
+                {/* CUSTOMER (OPTIONAL) */}
+                {(data.customerName || data.customerMobile || data.customerAddress) && (
+                    <>
+                        <div><b>Customer:</b> {data.customerName || "-"}</div>
+                        <div><b>Mobile:</b> {data.customerMobile || "-"}</div>
+                        <div><b>Address:</b> {data.customerAddress || "-"}</div>
+                        <hr style={lightHr} />
+                    </>
+                )}
 
-                <hr style={lightHr} />
-
+                {/* ITEMS */}
                 <table style={table}>
                     <thead>
                         <tr>
                             <th style={{ ...th, width: 40 }}>S.No</th>
-                            <th style={th}>Description of Goods</th>
-                            <th style={{ ...th, width: 70, textAlign: "right" }}>Qty</th>
-                            <th style={{ ...th, width: 70, textAlign: "right" }}>Rate</th>
-                            <th style={{ ...th, width: 90, textAlign: "right" }}>Amount</th>
+                            <th style={th}>Item</th>
+                            <th style={{ ...th, textAlign: "right" }}>Qty</th>
+                            <th style={{ ...th, textAlign: "right" }}>Rate</th>
+                            <th style={{ ...th, textAlign: "right" }}>Amount</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {bill.items.map((item, idx) => (
+                        {data.items.map((item, idx) => (
                             <tr key={idx}>
                                 <td style={tdCenter}>{idx + 1}</td>
                                 <td style={tdLeft}>{item.name}</td>
-                                <td style={tdRight}>{item.quantity} {item.unit}</td>
-                                <td style={tdRight}>₹ {formatCurrency(item.price)}</td>
-                                <td style={tdRight}>₹ {formatCurrency(item.amount)}</td>
+                                <td style={tdRight}>
+                                    {item.quantity} {item.unit}
+                                </td>
+                                <td style={tdRight}>
+                                    ₹ {formatCurrency(item.rate)}
+                                </td>
+                                <td style={tdRight}>
+                                    ₹ {formatCurrency(item.amount)}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -163,26 +124,20 @@ export default function BillPrint() {
 
                 <hr style={lightHr} />
 
+                {/* SUMMARY */}
                 <div style={totalsWrap}>
-                    <div>Subtotal: ₹ {formatCurrency(bill.subtotal)}</div>
-                    <div>Discount: ₹ {formatCurrency(bill.discount)}</div>
+                    <div>Returned Gross: ₹ {formatCurrency(data.returnedGross)}</div>
+                    <div>Discount Clawed Back: ₹ {formatCurrency(data.discountClawedBack)}</div>
                     <div style={{ fontWeight: 700 }}>
-                        Final Total: ₹ {formatCurrency(bill.total)}
+                        Net Return: ₹ {formatCurrency(data.netReturn)}
                     </div>
-                    <div>Paid: ₹ {formatCurrency(bill.paid)}</div>
-                    <div><b>Due: ₹ {formatCurrency(bill.due)}</b></div>
                 </div>
 
                 <hr style={lightHr} />
 
-                <div style={{ marginTop: 10 }}>
-                    <b>Amount in Words:</b> {numberToWords(bill.total)}
-                </div>
-
-                {/* FOOTER MESSAGE */}
+                {/* FOOTER */}
                 <div style={footerNote}>
-                    Thank you for your business! <br />
-                    Goods once sold will not be taken back without bill.
+                    This is a system generated return note.
                 </div>
 
                 <br />

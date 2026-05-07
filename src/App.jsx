@@ -17,7 +17,13 @@ import CustomerBills from "./pages/CustomerBills.jsx";
 import StockAdjust from "./pages/StockAdjust";
 import BillReturns from "./pages/BillReturns.jsx";
 import PartialReturn from "./pages/PartialReturn.jsx";
-import Refund from "./pages/Refund.jsx";
+import BillRefund from "./pages/BillRefund.jsx";
+import ReturnNotes from "./pages/ReturnNotes.jsx";
+import Fulfilments from "./pages/Fulfilments";
+import ReturnPrint from "./pages/ReturnPrint.jsx";
+import GstBilling from "./pages/GstBilling.jsx";
+import GstBillPrint from "./pages/GstBillPrint.jsx";
+import PublicBillView from "./pages/PublicBillView";
 
 function App() {
     const { user, loading } = useAuth();
@@ -48,10 +54,44 @@ function App() {
                 />
 
                 <Route
+                    path="/gst/billing"
+                    element={
+                        <PrivateRoute>
+                            <GstBilling />
+                        </PrivateRoute>
+                    }
+                />
+
+                <Route
+                    path="/bills/:billId"
+                    element={
+                        <PublicBillView />
+                    }
+                />
+
+                <Route
+                    path="/gst/bills/print/:billId"
+                    element={
+                        <PrivateRoute>
+                            <GstBillPrint />
+                        </PrivateRoute>
+                    }
+                />
+
+                <Route
                     path="/dashboard"
                     element={
                         <PrivateRoute>
                             <Dashboard />
+                        </PrivateRoute>
+                    }
+                />
+
+                <Route
+                    path="/fulfilments/pending"
+                    element={
+                        <PrivateRoute>
+                            <Fulfilments />
                         </PrivateRoute>
                     }
                 />
@@ -70,6 +110,15 @@ function App() {
                     element={
                         <PrivateRoute>
                             <BillPrint />
+                        </PrivateRoute>
+                    }
+                />
+
+                <Route
+                    path="/returns/print/:returnNoteId"
+                    element={
+                        <PrivateRoute>
+                            <ReturnPrint />
                         </PrivateRoute>
                     }
                 />
@@ -169,10 +218,19 @@ function App() {
                 {/* ================= RETURNS & REFUNDS ================= */}
 
                 <Route
-                    path="/bills/:billId/returns"
+                    path="/bills/:billId/returns/new"
                     element={
                         <PrivateRoute>
                             <BillReturns />
+                        </PrivateRoute>
+                    }
+                />
+
+                <Route
+                    path="/bills/:billId/returns"
+                    element={
+                        <PrivateRoute>
+                            <ReturnNotes />
                         </PrivateRoute>
                     }
                 />
@@ -190,7 +248,7 @@ function App() {
                     path="/bills/:billId/refund"
                     element={
                         <PrivateRoute>
-                            <Refund />
+                            <BillRefund />
                         </PrivateRoute>
                     }
                 />

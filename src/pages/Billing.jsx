@@ -4,7 +4,7 @@ import axios from "../api/axios";
 import { searchCustomers } from "../api/customerApi";
 
 /* =====================================================
-   BILLING PAGE — ERP GRADE (ENHANCED, SAFE)
+   BILLING PAGE — ERP GRADE (ACTIVE + ESTIMATE)
    ===================================================== */
 
 export default function Billing() {
@@ -13,6 +13,8 @@ export default function Billing() {
     /* ======================
        STATE
        ====================== */
+    const [billMode, setBillMode] = useState("ACTIVE"); // ACTIVE | ESTIMATE
+
     const [billingInput, setBillingInput] = useState({
         customer: {
             mode: "WALK_IN",
@@ -28,6 +30,7 @@ export default function Billing() {
     });
 
     const [errors, setErrors] = useState({});
+    const [sendWhatsapp, setSendWhatsapp] = useState(true);
 
     /* ======================
        ITEM SEARCH
@@ -63,7 +66,7 @@ export default function Billing() {
     }, [customerQuery]);
 
     /* ======================
-       CUSTOMER BALANCES (LEDGER-DRIVEN)
+       CUSTOMER BALANCES
        ====================== */
     const [customerBalances, setCustomerBalances] = useState({});
 
@@ -177,7 +180,7 @@ export default function Billing() {
             e.items = "At least one item is required";
         }
 
-        if (billingInput.paymentType === "CREDIT") {
+        if (billMode === "ACTIVE" && billingInput.paymentType === "CREDIT") {
             if (
                 billingInput.customer.mode === "WALK_IN" &&
                 !billingInput.customer.customerId
@@ -196,14 +199,12 @@ export default function Billing() {
     };
 
     /* ======================
-       SUBMIT BILL
+       SUBMIT BILL / ESTIMATE
        ====================== */
     const submitBill = async () => {
         if (!validate()) return;
 
-        const payload = {
-            paymentType: billingInput.paymentType,
-
+        const basePayload = {
             customerId:
                 billingInput.customer.mode === "REGISTERED"
                     ? billingInput.customer.customerId
@@ -225,10 +226,6 @@ export default function Billing() {
                     : null,
 
             discountAmount: Number(billingInput.discountAmount) || 0,
-            amountPaid:
-                billingInput.paymentType === "CREDIT"
-                    ? Number(billingInput.amountPaid) || 0
-                    : derivedTotals.finalAmount,
 
             items: billingInput.items.map(i => ({
                 itemId: i.itemId,
@@ -237,22 +234,39 @@ export default function Billing() {
             }))
         };
 
-        const res = await axios.post("/bills", payload);
+        let res;
 
-        const billId = res.data?.data?.id;
-        const shouldPrint = window.confirm(
-            "Bill created successfully.\nDo you want to print the bill?"
-        );
+        if (billMode === "ESTIMATE") {
+            res = await axios.post("/bills/estimate", basePayload);
+            alert("Estimate created successfully.\nNo stock or payment recorded.");
+        } else {
+            res = await axios.post("/bills", {
+                ...basePayload,
+                paymentType: billingInput.paymentType,
+                amountPaid:
+                    billingInput.paymentType === "CREDIT"
+                        ? Number(billingInput.amountPaid) || 0
+                        : derivedTotals.finalAmount,
 
-        if (shouldPrint && billId) {
-            window.location.href = `/billing/print/${billId}`;
-            return;
+                sendWhatsapp: sendWhatsapp   // 🔥 THIS LINE
+            });
+
+            const billId = res.data?.data?.id;
+            const shouldPrint = window.confirm(
+                "Bill created successfully.\nDo you want to print the bill?"
+            );
+
+            if (shouldPrint && billId) {
+                window.location.href = `/billing/print/${billId}`;
+                return;
+            }
         }
 
         resetForm();
     };
 
     const resetForm = () => {
+        setBillMode("ACTIVE");
         setBillingInput({
             customer: {
                 mode: "WALK_IN",
@@ -278,25 +292,46 @@ export default function Billing() {
         <div style={page}>
             <h2 style={title}>🧾 Billing</h2>
 
+            {/* BILL MODE */}
+            <section style={box}>
+                <h3>📄 Bill Mode</h3>
+                <select
+                    style={input}
+                    value={billMode}
+                    onChange={e => setBillMode(e.target.value)}
+                >
+                    <option value="ACTIVE">Bill (ACTIVE)</option>
+                    <option value="ESTIMATE">Estimate</option>
+                </select>
+
+                {billMode === "ESTIMATE" && (
+                    <div style={{ fontSize: 13, opacity: 0.7 }}>
+                        Estimate only — no stock or payment recorded.
+                    </div>
+                )}
+            </section>
+
             {/* CUSTOMER */}
             <section style={box}>
                 <h3>👤 Customer</h3>
 
-                <select
-                    style={input}
-                    value={billingInput.paymentType}
-                    onChange={e =>
-                        setBillingInput({
-                            ...billingInput,
-                            paymentType: e.target.value,
-                            amountPaid: ""
-                        })
-                    }
-                >
-                    <option value="CASH">Cash</option>
-                    <option value="UPI">UPI</option>
-                    <option value="CREDIT">Credit</option>
-                </select>
+                {billMode === "ACTIVE" && (
+                    <select
+                        style={input}
+                        value={billingInput.paymentType}
+                        onChange={e =>
+                            setBillingInput({
+                                ...billingInput,
+                                paymentType: e.target.value,
+                                amountPaid: ""
+                            })
+                        }
+                    >
+                        <option value="CASH">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="CREDIT">Credit</option>
+                    </select>
+                )}
 
                 <input
                     style={input}
@@ -418,11 +453,7 @@ export default function Billing() {
                             type="number"
                             value={item.quantity}
                             onChange={e =>
-                                updateItem(
-                                    idx,
-                                    "quantity",
-                                    Number(e.target.value) || 0
-                                )
+                                updateItem(idx, "quantity", Number(e.target.value) || 0)
                             }
                         />
 
@@ -431,11 +462,7 @@ export default function Billing() {
                             type="number"
                             value={item.price}
                             onChange={e =>
-                                updateItem(
-                                    idx,
-                                    "price",
-                                    Number(e.target.value) || 0
-                                )
+                                updateItem(idx, "price", Number(e.target.value) || 0)
                             }
                         />
 
@@ -447,14 +474,13 @@ export default function Billing() {
                     </div>
                 ))}
             </section>
+
             {errors.items && <div style={error}>{errors.items}</div>}
 
             {/* SUMMARY */}
             <section style={box}>
                 <h3>💰 Summary</h3>
-
                 <div>Subtotal: ₹ {derivedTotals.subtotal}</div>
-
                 <div>
                     Discount:
                     <input
@@ -470,12 +496,11 @@ export default function Billing() {
                         }
                     />
                 </div>
-
                 <strong>Final: ₹ {derivedTotals.finalAmount}</strong>
             </section>
 
             {/* PAYMENT */}
-            {billingInput.paymentType === "CREDIT" && (
+            {billMode === "ACTIVE" && billingInput.paymentType === "CREDIT" && (
                 <section style={box}>
                     <h3>💳 Payment</h3>
 
@@ -497,9 +522,20 @@ export default function Billing() {
             )}
 
             {/* ACTIONS */}
+            <section style={box}>
+                <label style={{ cursor: "pointer", fontWeight: 500 }}>
+                    <input
+                        type="checkbox"
+                        checked={sendWhatsapp}
+                        onChange={(e) => setSendWhatsapp(e.target.checked)}
+                        style={{ marginRight: "8px" }}
+                    />
+                    Send bill on WhatsApp
+                </label>
+            </section>
             <section style={{ display: "flex", gap: 12 }}>
                 <button style={primaryBtn} onClick={submitBill}>
-                    Generate Bill
+                    {billMode === "ESTIMATE" ? "Create Estimate" : "Generate Bill"}
                 </button>
                 <button style={secondaryBtn} onClick={resetForm}>
                     Reset
