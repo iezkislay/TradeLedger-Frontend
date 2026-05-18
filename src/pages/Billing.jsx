@@ -144,6 +144,8 @@ export default function Billing() {
                     {
                         itemId: item.id,
                         name: item.name,
+                        brand: item.brand,
+                        itemCode: item.itemCode,
                         baseUnit: item.baseUnit,
                         availableStock: item.availableStock,
                         quantity: 1,
@@ -435,7 +437,15 @@ export default function Billing() {
                         style={searchRow}
                         onClick={() => addItem(item)}
                     >
-                        {item.name} — Stock: {item.availableStock}
+                        <div style={{ fontWeight: 600 }}>
+                            {item.name}
+                        </div>
+
+                        <div style={{ fontSize: 13, color: "#666" }}>
+                            Brand: {item.brand || "Generic"} •
+                            Code: {item.itemCode} •
+                            Stock: {item.availableStock}
+                        </div>
                     </div>
                 ))}
             </section>
@@ -446,7 +456,15 @@ export default function Billing() {
 
                 {billingInput.items.map((item, idx) => (
                     <div key={idx} style={itemRow}>
-                        <span style={{ flex: 2 }}>{item.name}</span>
+                        <span style={{ flex: 2 }}>
+                            <div style={{ fontWeight: 600 }}>
+                                {item.name}
+                            </div>
+
+                            <div style={{ fontSize: 12, color: "#666" }}>
+                                {item.brand} • {item.itemCode}
+                            </div>
+                        </span>
 
                         <input
                             style={smallInput}

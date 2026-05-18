@@ -152,7 +152,21 @@ export default function BillPrint() {
                         {bill.items.map((item, idx) => (
                             <tr key={idx}>
                                 <td style={tdCenter}>{idx + 1}</td>
-                                <td style={tdLeft}>{item.name}</td>
+                                <td style={tdLeft}>
+                                    <div>{item.name}</div>
+
+                                    {item.brand && (
+                                        <div
+                                            style={{
+                                                fontSize: 11,
+                                                color: "#666",
+                                                marginTop: 2
+                                            }}
+                                        >
+                                            ({item.brand})
+                                        </div>
+                                    )}
+                                </td>
                                 <td style={tdRight}>{item.quantity} {item.unit}</td>
                                 <td style={tdRight}>₹ {formatCurrency(item.price)}</td>
                                 <td style={tdRight}>₹ {formatCurrency(item.amount)}</td>
