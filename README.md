@@ -1,16 +1,216 @@
-# React + Vite
+# TradeLedger Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+TradeLedger is a modern billing, inventory, customer ledger, sales return, and refund management system built for hardware, sanitary, plumbing, electrical, and retail stores.
 
-Currently, two official plugins are available:
+This repository contains the React + Vite frontend application.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Features
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+### Billing
 
-## Expanding the ESLint configuration
+* Create bills quickly
+* Cash, UPI and Credit sales
+* Bill printing (A4, A5, A6)
+* Customer-wise billing history
+* Bill adjustments
+* Discount support
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Inventory Management
+
+* Item catalog management
+* Category and brand support
+* Stock tracking
+* Low stock alerts
+* Item search and filtering
+
+### Customer Management
+
+* Customer ledger
+* Outstanding dues
+* Customer statements
+* Payment tracking
+* Balance calculation
+
+### Sales Returns
+
+* Partial returns
+* Full returns
+* Delivered item returns
+* Pending item returns
+* Return note generation
+* Return reconciliation
+
+### Refund Management
+
+* Refund against finalized returns
+* Refund history tracking
+* Audit logging
+* Settlement calculations
+
+### Reporting
+
+* Sales reports
+* Customer balances
+* Outstanding amount tracking
+* Return reports
+* Stock reports
+
+---
+
+## Technology Stack
+
+* React
+* Vite
+* React Router
+* Axios
+* JavaScript (ES6+)
+* CSS
+* REST API Integration
+
+---
+
+## Project Structure
+
+```text
+src/
+├── api/
+├── components/
+├── pages/
+├── routes/
+├── utils/
+├── assets/
+├── App.jsx
+└── main.jsx
+```
+
+---
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone <repository-url>
+cd app-frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+---
+
+## Running Locally
+
+Start development server:
+
+```bash
+npm run dev
+```
+
+Frontend will be available at:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Build for Production
+
+```bash
+npm run build
+```
+
+Generated files will be available in:
+
+```text
+dist/
+```
+
+Preview production build:
+
+```bash
+npm run preview
+```
+
+---
+
+## Environment Configuration
+
+Create a `.env` file:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+Example production configuration:
+
+```env
+VITE_API_BASE_URL=https://api.yourdomain.com/api
+```
+
+---
+
+## Printing Support
+
+TradeLedger supports:
+
+* A4 bills
+* A5 bills
+* A6 bills
+* Customer invoices
+* Estimate printing
+* Return note printing
+
+---
+
+## User Roles
+
+### Owner
+
+* Full system access
+* Manage inventory
+* Manage users
+* Process refunds
+* View reports
+
+### Billing User
+
+* Create bills
+* Manage customers
+* Accept payments
+* Create return notes
+
+---
+
+## Development Guidelines
+
+* Keep components reusable
+* Prefer API-driven UI
+* Maintain responsive layouts
+* Avoid business logic in components
+* Use centralized API configuration
+
+---
+
+## Backend
+
+TradeLedger Backend is built using:
+
+* Spring Boot
+* PostgreSQL
+* Hibernate/JPA
+* REST APIs
+
+---
+
+## License
+
+Private Proprietary Software
+
+© TradeLedger. All Rights Reserved.
