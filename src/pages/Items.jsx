@@ -48,7 +48,7 @@ export default function Items() {
             }
 
             const res = await api.get(
-                `/items/paged?page=0&size=50${
+                `/items/paged?page=0&size=1000${
                     params.length ? "&" + params.join("&") : ""
                 }`
             );
@@ -84,10 +84,12 @@ export default function Items() {
         let list = [...items];
 
         // 🔥 Low stock only
+        // 🔥 Low stock only
         if (lowStockOnly) {
             list = list.filter(
                 i =>
                     i.minStock != null &&
+                    i.minStock > 0 && // Ignore items where min stock is 0
                     (i.availableStock ?? 0) <= i.minStock
             );
         }

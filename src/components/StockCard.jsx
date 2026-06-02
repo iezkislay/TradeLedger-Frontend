@@ -20,6 +20,7 @@ export default function StockCard({ item, isOwner }) {
 
     const isLowStock =
         minStock !== null &&
+        minStock > 0 &&
         availableStock !== null &&
         availableStock <= minStock;
 
